@@ -15,20 +15,22 @@ var fs = require('fs-extra'),
     files = require(path.resolve(__dirname, 'export.json')).FILES,
 
     outputDir,
-    uri = {
-        gnu32: 'http://nodejs.org/dist/v{version}/node-v{version}-linux-x86.tar.gz',
-        gnu64: 'http://nodejs.org/dist/v{version}/node-v{version}-linux-x64.tar.gz',
-        osx32: 'http://nodejs.org/dist/v{version}/node-v{version}-darwin-x86.tar.gz',
-        osx64: 'http://nodejs.org/dist/v{version}/node-v{version}-darwin-x64.tar.gz',
-        sun32: 'http://nodejs.org/dist/v{version}/node-v{version}-sunos-x86.tar.gz',
-        sun64: 'http://nodejs.org/dist/v{version}/node-v{version}-sunos-x64.tar.gz',
-        win32: 'http://nodejs.org/dist/v{version}/node.exe',
-        win64: 'http://nodejs.org/dist/v{version}/x64/node.exe'
+    nodeURI = {
+        gnu32: 'http://nodejs.org/dist/v{nodeVersion}/node-v{nodeVersion}-linux-x86.tar.gz',
+        gnu64: 'http://nodejs.org/dist/v{nodeVersion}/node-v{nodeVersion}-linux-x64.tar.gz',
+        osx32: 'http://nodejs.org/dist/v{nodeVersion}/node-v{nodeVersion}-darwin-x86.tar.gz',
+        osx64: 'http://nodejs.org/dist/v{nodeVersion}/node-v{nodeVersion}-darwin-x64.tar.gz',
+        sun32: 'http://nodejs.org/dist/v{nodeVersion}/node-v{nodeVersion}-sunos-x86.tar.gz',
+        sun64: 'http://nodejs.org/dist/v{nodeVersion}/node-v{nodeVersion}-sunos-x64.tar.gz',
+        win32: 'http://nodejs.org/dist/v{nodeVersion}/node.exe',
+        win64: 'http://nodejs.org/dist/v{nodeVersion}/x64/node.exe'
     },
+    npmURI = 'http://nodejs.org/dist/npm/npm-{npmVersion}.zip',
     version = laut.version;
 
 program
-    .option('-n, --nodejs [nodejs version]', 'The version of NodeJS to wrap [0.8.21] by default', '0.8.21')
+    .option('-node, --nodejs [nodejs version]', 'The version of NodeJS to wrap [0.8.21] by default', '0.8.21')
+    .option('-npm, --npm [npm version]', 'The version of NPM to wrap [1.2.11] by default', '1.2.11')
     .option('-d, --dist [destination folder]', 'The dist folder in which package should be created [dist] by default', path.resolve(__dirname, '../dist'))
     .option('-p, --platform [build platform]', 'The platform, on which NodeJS should run ["win32", "win64", "osx32", "osx64", "gnu32", "gnu64", "sun32", "sun64"]', function(value) {
         value = value.split(',');
@@ -195,13 +197,13 @@ function createZipFile(value) {
     });
 }
 
-function downloadFile(fileName, platformURI, platform) {
+function downloadFile(fileName, nodePlatformURI, platform) {
     return new Y.Promise(function(resolve, reject) {
         var request;
 
-        console.log('Downloading: ' + platformURI);
+        console.log('Downloading: ' + nodePlatformURI);
 
-        request = http.get(platformURI, fileName, function(error, result) {
+        request = http.get(nodePlatformURI, fileName, function(error, result) {
             if (error) {
                 reject(error);
             }
@@ -317,16 +319,16 @@ process.on('uncaughtException', cleanup);
 program.platform.forEach(
     function(platform) {
         var fileName,
-            platformURI;
+            nodePlatformURI;
 
-        platformURI = uri[platform];
+        nodePlatformURI = nodeURI[platform];
 
-        if (platformURI) {
-            platformURI = platformURI.replace(/\{version\}/g, program.nodejs);
+        if (nodePlatformURI) {
+            nodePlatformURI = nodePlatformURI.replace(/\{nodeVersion\}/g, program.nodejs);
 
-            fileName = path.normalize(outputDir + path.sep + platformURI.substring(platformURI.lastIndexOf('/')).replace(/\.exe/, '_' + platform + '.exe'));
+            fileName = path.normalize(outputDir + path.sep + nodePlatformURI.substring(nodePlatformURI.lastIndexOf('/')).replace(/\.exe/, '_' + platform + '.exe'));
 
-            downloadFile(fileName, platformURI, platform)
+            downloadFile(fileName, nodePlatformURI, platform)
                 .then(extractFile)
                 .then(prepareDownloadedFile)
                 .then(copyExecutableFile)
