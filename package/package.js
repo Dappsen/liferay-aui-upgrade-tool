@@ -150,7 +150,7 @@ function copyNodeJS(value) {
             dest += '.exe';
         }
 
-        cpPromise = copyFile(value.file, dest);
+        cpPromise = copyFile(value.nodeFileName, dest);
 
         cpPromise.then(
             function() {
@@ -208,12 +208,34 @@ function downloadNodeJS(value) {
                 reject(error);
             }
             else {
-                resolve({
-                    file: value.nodeFileName,
-                    platform: value.platform
-                });
+                resolve(value);
             }
         });
+    });
+}
+
+function downloadNPM(value) {
+    return new Y.Promise(function(resolve, reject) {
+        var request;
+
+        if (isWindows(value.platform)) {
+            console.log('Downloading: ' + value.npmPlatformURI);
+
+            request = http.get(value.nodePlatformURI, value.nodeFileName, function(error, result) {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve({
+                        file: value.nodeFileName,
+                        platform: value.platform
+                    });
+                }
+            });
+        }
+        else {
+            resolve(value);
+        }
     });
 }
 
@@ -226,7 +248,7 @@ function prepareDownloadedFile(value) {
         var dirToWrap,
             nodeJSFile;
 
-        nodeJSFile = value.file;
+        nodeJSFile = value.nodeFileName;
 
         console.log('Processing: ' + nodeJSFile);
 
@@ -253,7 +275,7 @@ function extractFile(value) {
             resolve(value);
         }
         else {
-            file = value.file;
+            file = value.nodeFileName;
 
             nodeJSFile = path.normalize(file + '_extracted');
 
@@ -281,7 +303,7 @@ function extractTarGZFile(value) {
             destFile,
             srcFile;
 
-        new targz().extract(value.file, value.nodeJSFile, function(error) {
+        new targz().extract(value.nodeFileName, value.nodeJSFile, function(error) {
             if (error) {
                 reject(error);
             }
@@ -297,7 +319,7 @@ function extractTarGZFile(value) {
                         reject(error);
                     }
                     else {
-                        value.file = destFile;
+                        value.nodeFileName = destFile;
 
                         resolve(value);
                     }
@@ -320,6 +342,8 @@ program.platform.forEach(
     function(platform) {
         var nodeFileName,
             nodePlatformURI,
+            npmFileName,
+            npmPlatformURI,
             value;
 
         nodePlatformURI = nodeURI[platform];
@@ -327,15 +351,21 @@ program.platform.forEach(
         if (nodePlatformURI) {
             nodePlatformURI = nodePlatformURI.replace(/\{nodeVersion\}/g, program.nodejs);
 
+            npmPlatformURI = npmURI;
+
             nodeFileName = path.normalize(outputDir + path.sep + nodePlatformURI.substring(nodePlatformURI.lastIndexOf('/')).replace(/\.exe/, '_' + platform + '.exe'));
+
+            npmFileName = path.normalize(outputDir + path.sep + nodePlatformURI.substring(nodePlatformURI.lastIndexOf('/')).replace(/\.zip/, '_' + platform + '.zip'));
 
             value = {
                 nodeFileName: nodeFileName,
                 nodePlatformURI: nodePlatformURI,
+                npmFileName: npmFileName,
                 platform: platform
             };
 
             downloadNodeJS(value)
+                //.then(downloadNPM)
                 .then(extractFile)
                 .then(prepareDownloadedFile)
                 .then(copyExecutableFile)
