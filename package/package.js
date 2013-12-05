@@ -328,6 +328,8 @@ function extractNPM(value) {
 
                 extractedFile = path.normalize(value.npmFileName + '_extracted');
 
+                console.log('Extracting NPM to: ' + extractedFile);
+
                 zip.extractAllTo(extractedFile);
 
                 value.npmFileName = extractedFile;
