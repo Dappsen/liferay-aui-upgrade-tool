@@ -197,20 +197,20 @@ function createZipFile(value) {
     });
 }
 
-function downloadFile(fileName, nodePlatformURI, platform) {
+function downloadNodeJS(value) {
     return new Y.Promise(function(resolve, reject) {
         var request;
 
-        console.log('Downloading: ' + nodePlatformURI);
+        console.log('Downloading: ' + value.nodePlatformURI);
 
-        request = http.get(nodePlatformURI, fileName, function(error, result) {
+        request = http.get(value.nodePlatformURI, value.fileName, function(error, result) {
             if (error) {
                 reject(error);
             }
             else {
                 resolve({
-                    file: fileName,
-                    platform: platform
+                    file: value.fileName,
+                    platform: value.platform
                 });
             }
         });
@@ -319,7 +319,8 @@ process.on('uncaughtException', cleanup);
 program.platform.forEach(
     function(platform) {
         var fileName,
-            nodePlatformURI;
+            nodePlatformURI,
+            value;
 
         nodePlatformURI = nodeURI[platform];
 
@@ -328,7 +329,13 @@ program.platform.forEach(
 
             fileName = path.normalize(outputDir + path.sep + nodePlatformURI.substring(nodePlatformURI.lastIndexOf('/')).replace(/\.exe/, '_' + platform + '.exe'));
 
-            downloadFile(fileName, nodePlatformURI, platform)
+            value = {
+                fileName: fileName,
+                nodePlatformURI: nodePlatformURI,
+                platform: platform
+            };
+
+            downloadNodeJS(value)
                 .then(extractFile)
                 .then(prepareDownloadedFile)
                 .then(copyExecutableFile)
