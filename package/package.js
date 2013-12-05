@@ -2,7 +2,8 @@
 
 'use strict';
 
-var fs = require('fs-extra'),
+var AdmZip = require('adm-zip'),
+    fs = require('fs-extra'),
     http = require('http-get'),
     path = require('path'),
     program = require('commander'),
@@ -163,6 +164,29 @@ function copyNodeJS(value) {
     });
 }
 
+function copyNPM(value) {
+    return new Y.Promise(function(resolve, reject) {
+        if (isWindows(value.platform)) {
+            debugger;
+            var cpPromise;
+
+            cpPromise = copyFile(value.npmFileName, value.dirToWrap);
+
+            cpPromise.then(
+                function() {
+                    resolve(value);
+                },
+                function(error) {
+                    reject(error);
+                }
+            );
+        }
+        else {
+            resolve(value);
+        }
+    });
+}
+
 function createZipFile(value) {
     return new Y.Promise(function(resolve, reject) {
         var finalDir,
@@ -222,7 +246,6 @@ function downloadNPM(value) {
             console.log('Downloading: ' + value.npmPlatformURI);
 
             request = http.get(value.npmPlatformURI, value.npmFileName, function(error, result) {
-                debugger;
                 if (error) {
                     reject(error);
                 }
@@ -295,6 +318,28 @@ function extractNodeJS(value) {
     });
 }
 
+function extractNPM(value) {
+    return new Y.Promise(function(resolve, reject) {
+        if (isWindows(value.platform)) {
+            var extractedFile,
+                zip;
+
+                zip = new AdmZip(value.npmFileName);
+
+                extractedFile = path.normalize(value.npmFileName + '_extracted');
+
+                zip.extractAllTo(extractedFile);
+
+                value.npmFileName = extractedFile;
+
+                resolve(value);
+            }
+            else {
+                resolve(value);
+            }
+    });
+}
+
 function extractTarGZFile(value) {
     return new Y.Promise(function(resolve, reject) {
         var basename,
@@ -349,8 +394,6 @@ program.platform.forEach(
         if (nodePlatformURI) {
             nodePlatformURI = nodePlatformURI.replace(/\{nodeVersion\}/g, program.nodejs);
 
-            debugger;
-
             npmPlatformURI = npmURI.replace(/\{npmVersion\}/g, program.npm);
 
             nodeFileName = path.normalize(outputDir + path.sep + nodePlatformURI.substring(nodePlatformURI.lastIndexOf('/')).replace(/\.exe/, '_' + platform + '.exe'));
@@ -368,9 +411,11 @@ program.platform.forEach(
             downloadNodeJS(value)
                 .then(downloadNPM)
                 .then(extractNodeJS)
+                .then(extractNPM)
                 .then(prepareDownloadedFile)
                 .then(copyExecutableFile)
                 .then(copyNodeJS)
+                .then(copyNPM)
                 .then(copyItself)
                 .then(createZipFile, reportError);
         }

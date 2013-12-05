@@ -36,7 +36,8 @@
         "http-get": "0.5.10",
         "tar.gz": "0.1.1",
         "yui": "3.13.0",
-        "yuitest": "0.7.9"
+        "yuitest": "0.7.9",
+        "adm-zip": "0.4.3"
     },
     "engines": {
         "node": ">=0.8"
