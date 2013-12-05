@@ -221,15 +221,13 @@ function downloadNPM(value) {
         if (isWindows(value.platform)) {
             console.log('Downloading: ' + value.npmPlatformURI);
 
-            request = http.get(value.nodePlatformURI, value.nodeFileName, function(error, result) {
+            request = http.get(value.npmPlatformURI, value.npmFileName, function(error, result) {
+                debugger;
                 if (error) {
                     reject(error);
                 }
                 else {
-                    resolve({
-                        file: value.nodeFileName,
-                        platform: value.platform
-                    });
+                    resolve(value);
                 }
             });
         }
@@ -262,7 +260,7 @@ function prepareDownloadedFile(value) {
     });
 }
 
-function extractFile(value) {
+function extractNodeJS(value) {
     return new Y.Promise(function(resolve, reject) {
         var extractTGZPromise,
             file,
@@ -351,22 +349,25 @@ program.platform.forEach(
         if (nodePlatformURI) {
             nodePlatformURI = nodePlatformURI.replace(/\{nodeVersion\}/g, program.nodejs);
 
-            npmPlatformURI = npmURI;
+            debugger;
+
+            npmPlatformURI = npmURI.replace(/\{npmVersion\}/g, program.npm);
 
             nodeFileName = path.normalize(outputDir + path.sep + nodePlatformURI.substring(nodePlatformURI.lastIndexOf('/')).replace(/\.exe/, '_' + platform + '.exe'));
 
-            npmFileName = path.normalize(outputDir + path.sep + nodePlatformURI.substring(nodePlatformURI.lastIndexOf('/')).replace(/\.zip/, '_' + platform + '.zip'));
+            npmFileName = path.normalize(outputDir + path.sep + npmPlatformURI.substring(npmPlatformURI.lastIndexOf('/')).replace(/\.zip/, '_' + platform + '.zip'));
 
             value = {
                 nodeFileName: nodeFileName,
                 nodePlatformURI: nodePlatformURI,
+                npmPlatformURI: npmPlatformURI,
                 npmFileName: npmFileName,
                 platform: platform
             };
 
             downloadNodeJS(value)
-                //.then(downloadNPM)
-                .then(extractFile)
+                .then(downloadNPM)
+                .then(extractNodeJS)
                 .then(prepareDownloadedFile)
                 .then(copyExecutableFile)
                 .then(copyNodeJS)
