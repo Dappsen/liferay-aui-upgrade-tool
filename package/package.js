@@ -203,13 +203,13 @@ function downloadNodeJS(value) {
 
         console.log('Downloading: ' + value.nodePlatformURI);
 
-        request = http.get(value.nodePlatformURI, value.fileName, function(error, result) {
+        request = http.get(value.nodePlatformURI, value.nodeFileName, function(error, result) {
             if (error) {
                 reject(error);
             }
             else {
                 resolve({
-                    file: value.fileName,
+                    file: value.nodeFileName,
                     platform: value.platform
                 });
             }
@@ -318,7 +318,7 @@ process.on('uncaughtException', cleanup);
 
 program.platform.forEach(
     function(platform) {
-        var fileName,
+        var nodeFileName,
             nodePlatformURI,
             value;
 
@@ -327,10 +327,10 @@ program.platform.forEach(
         if (nodePlatformURI) {
             nodePlatformURI = nodePlatformURI.replace(/\{nodeVersion\}/g, program.nodejs);
 
-            fileName = path.normalize(outputDir + path.sep + nodePlatformURI.substring(nodePlatformURI.lastIndexOf('/')).replace(/\.exe/, '_' + platform + '.exe'));
+            nodeFileName = path.normalize(outputDir + path.sep + nodePlatformURI.substring(nodePlatformURI.lastIndexOf('/')).replace(/\.exe/, '_' + platform + '.exe'));
 
             value = {
-                fileName: fileName,
+                nodeFileName: nodeFileName,
                 nodePlatformURI: nodePlatformURI,
                 platform: platform
             };
